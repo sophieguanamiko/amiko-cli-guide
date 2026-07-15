@@ -1,1 +1,566 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>认识 Amiko CLI — 像发消息一样操控你的 AI 世界</title>
+<style>
+  :root {
+    --bg: #f8f7fc;
+    --card: #ffffff;
+    --border: #e8e5f2;
+    --text: #2d2a3a;
+    --muted: #6b6580;
+    --accent: #7c5cfc;
+    --accent-light: #f3f0ff;
+    --green: #10b981;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --orange: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans CJK SC', 'Noto Sans SC', 'Noto Color Emoji', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple Color Emoji', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 80px 24px 60px;
+  }
+  .hero .badge {
+    display: inline-block;
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+  .hero h1 .highlight {
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    color: var(--muted);
+    font-size: 1.1rem;
+    max-width: 520px;
+    margin: 16px auto 0;
+  }
+
+  section { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+  section h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 10px; }
+  section .sec-desc { color: var(--muted); margin-bottom: 32px; font-size: 0.95rem; }
+
+  .analogy {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .analogy-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 22px;
+    text-align: center;
+    transition: box-shadow 0.2s;
+  }
+  .analogy-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+  .analogy-card .emoji { font-size: 2.8rem; margin-bottom: 14px; }
+  .analogy-card h3 { font-size: 1.05rem; margin-bottom: 8px; }
+  .analogy-card p { color: var(--muted); font-size: 0.88rem; }
+
+  .chat-demo {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    max-width: 400px;
+    margin: 0 auto;
+    overflow: hidden;
+  }
+  .chat-demo .chat-header {
+    background: #f9f9fc;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .chat-demo .chat-header .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+  }
+  .chat-demo .chat-body { padding: 20px 16px; }
+  .chat-demo .msg {
+    margin-bottom: 14px;
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .chat-demo .msg.me { flex-direction: row-reverse; }
+  .chat-demo .msg .bubble {
+    background: var(--accent-light);
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 0.85rem;
+    max-width: 80%;
+    line-height: 1.55;
+  }
+  .chat-demo .msg.me .bubble {
+    background: var(--accent);
+    color: #fff;
+  }
+  .chat-demo .msg .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #d1c4f0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; flex-shrink: 0;
+  }
+
+  .chat-demo .sys-note {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin: 6px 0 14px;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .step {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 22px;
+    text-align: center;
+    position: relative;
+  }
+  .step .num {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 14px;
+  }
+  .step h4 { font-size: 1rem; margin-bottom: 6px; }
+  .step p { color: var(--muted); font-size: 0.85rem; }
+
+  .cap-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .cap-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+  }
+  .cap-card h3 { font-size: 1.1rem; margin-bottom: 6px; }
+  .cap-card .sub { color: var(--muted); font-size: 0.82rem; margin-bottom: 16px; }
+  .cap-card .ex {
+    background: #faf9fe;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+  .cap-card .ex .ask { color: var(--accent); font-weight: 600; }
+  .cap-card .ex .result { color: var(--text); margin-top: 4px; padding-left: 8px; border-left: 2px solid var(--green); }
+
+  .full-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  .full-table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    border-bottom: 2px solid var(--border);
+  }
+  .full-table td {
+    padding: 11px 16px;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #f3f2f8;
+    vertical-align: top;
+  }
+  .full-table tr:hover { background: #faf9fe; }
+  .divider-row td {
+    padding: 4px 16px;
+    border-bottom: none;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+
+  .value-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .value-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 22px;
+    text-align: center;
+  }
+  .value-card.core { border-color: var(--accent); transform: scale(1.03); }
+  .value-card .emoji { font-size: 2.2rem; margin-bottom: 10px; }
+  .value-card h4 { font-size: 1rem; margin-bottom: 8px; }
+  .value-card p { color: var(--muted); font-size: 0.85rem; }
+
+  .quote {
+    text-align: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 36px 32px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .quote .line { font-size: 1.15rem; font-weight: 600; }
+  .quote .line .pink { color: var(--accent); }
+
+  .footer {
+    text-align: center;
+    padding: 40px 24px;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 720px) {
+    .analogy, .steps, .cap-grid, .value-grid {
+      grid-template-columns: 1fr;
+    }
+    .value-card.core { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="badge">👋 给刚接触 AI 的朋友</div>
+  <h1>像<strong class="highlight">发消息</strong>一样<br>操控你的 AI 世界</h1>
+  <p>不需要学编程，不需要看懂代码。你只需要跟 AI 聊天，它就在后台用 CLI 帮你做完一切。</p>
+</header>
+
+<!-- Section 1: What is CLI -->
+<section>
+  <h2>📱 CLI 是什么？一个生活里的比喻</h2>
+  <p class="sec-desc">你可能每天都在用，只是没意识到</p>
+
+  <div class="analogy" style="margin-bottom:36px;">
+    <div class="analogy-card">
+      <div class="emoji">👆</div>
+      <h3>用手指点屏幕</h3>
+      <p>打开 App → 找到按钮 → 点一下<br>这叫 <strong>GUI（图形界面）</strong><br>就像去餐厅看菜单点菜</p>
+    </div>
+    <div class="analogy-card">
+      <div class="emoji">💬</div>
+      <h3>用文字发指令</h3>
+      <p>打一行字 → 回车 → 事情完成<br>这叫 <strong>CLI（命令行）</strong><br>就像跟服务员说「来碗面」</p>
+    </div>
+    <div class="analogy-card">
+      <div class="emoji">🤖</div>
+      <h3>AI 替你打字</h3>
+      <p>你跟 AI 说「帮我加好友」<br>AI 自动敲命令、执行、回复<br><strong>你甚至不需要知道命令长什么样</strong></p>
+    </div>
+  </div>
+
+  <!-- Chat demo — 真实 Amiko 用例 -->
+  <div class="chat-demo">
+    <div class="chat-header">
+      <span class="dot"></span> 你与 AI 助手 Somiko 的对话
+    </div>
+    <div class="chat-body">
+
+      <div class="msg me">
+        <div class="bubble">帮我加 @somiko_98 好友</div>
+        <div class="avatar">🙋</div>
+      </div>
+      <div class="msg">
+        <div class="avatar">🌙</div>
+        <div class="bubble">已发送好友申请 ✅<br>等对方通过就行</div>
+      </div>
+
+      <div class="msg me">
+        <div class="bubble">群里刚刚聊了什么？帮我总结一下</div>
+        <div class="avatar">🙋</div>
+      </div>
+      <div class="msg">
+        <div class="avatar">🌙</div>
+        <div class="bubble">群里聊了三件事：<br>1. 下周五的线上分享会<br>2. 有人推荐了一个新工具<br>3. 约了周末一起测试</div>
+      </div>
+
+      <div class="msg me">
+        <div class="bubble">给我做一首 Lo-fi 风格的 beats，3 分钟左右</div>
+        <div class="avatar">🙋</div>
+      </div>
+      <div class="msg">
+        <div class="avatar">🌙</div>
+        <div class="bubble">🎵 生成中… 花费 10 AMIKO<br>做好了，听一下 👇<br><small style="color:var(--muted);">（音频已自动发送）</small></div>
+      </div>
+
+      <div class="msg me">
+        <div class="bubble">看一下我的钱包余额</div>
+        <div class="avatar">🙋</div>
+      </div>
+      <div class="msg">
+        <div class="avatar">🌙</div>
+        <div class="bubble">SOL: 0.018<br>USDC: 1.79<br>AMIKO: 484.60<br>够用的 ✅</div>
+      </div>
+
+    </div>
+  </div>
+  <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-top:16px;">👆 加好友、看群聊、做音乐、查钱包——全部一句话搞定，这就是 CLI</p>
+</section>
+
+<!-- Section 2: How -->
+<section>
+  <h2>🔗 三步理解 CLI 的工作原理</h2>
+  <p class="sec-desc">比你想象的简单得多</p>
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <h4>你说话</h4>
+      <p>就像跟朋友聊天一样<br>「帮我加那个新认识的人好友」<br>「群里在聊什么，总结给我」</p>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <h4>AI 翻译</h4>
+      <p>你的 AI 助手把你的话<br>翻译成 Amiko 平台能懂的指令<br>在后台默默执行</p>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <h4>事情完成</h4>
+      <p>好友申请已发送 ✅<br>群聊总结已生成 ✅<br>音乐做好了，直接放给你听 ✅</p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 3: Amiko CLI — 实际能做的事 -->
+<section>
+  <h2>🛠 Amiko CLI 能帮你做什么？</h2>
+  <p class="sec-desc">不吹概念，直接看真实用例 👇</p>
+
+  <div class="cap-grid">
+    <!-- 社交 -->
+    <div class="cap-card" style="border-left: 3px solid var(--accent);">
+      <h3>💬 社交与关系</h3>
+      <div class="sub">不只是聊天，是管理你的数字社交圈</div>
+      <div class="ex">
+        <div class="ask">「帮我加 @用户名 好友」</div>
+        <div class="result">→ 自动发送好友申请，等对方通过</div>
+      </div>
+      <div class="ex">
+        <div class="ask">「这个群今天聊了什么？总结一下」</div>
+        <div class="result">→ 读完全部消息，提炼要点给你</div>
+      </div>
+      <div class="ex">
+        <div class="ask">「发一条动态：今天新做了一首歌」</div>
+        <div class="result">→ 动态发到你的 Feed，好友能看到、点赞、评论</div>
+      </div>
+    </div>
+
+    <!-- 创作 -->
+    <div class="cap-card" style="border-left: 3px solid var(--green);">
+      <h3>🎨 AI 创作</h3>
+      <div class="sub">一句话出作品，不用会任何工具</div>
+      <div class="ex">
+        <div class="ask">「做一首 Lo-fi 风格的音乐，3 分钟」</div>
+        <div class="result">→ 生成完整曲目，直接播放</div>
+      </div>
+      <div class="ex">
+        <div class="ask">「生成一张赛博朋克风格的头像」</div>
+        <div class="result">→ AI 生成图片，可以直接用做头像</div>
+      </div>
+      <div class="ex">
+        <div class="ask">「把这段文字录成语音消息」</div>
+        <div class="result">→ 文字转语音，用你的 AI 分身的声音</div>
+      </div>
+    </div>
+
+    <!-- 钱包 -->
+    <div class="cap-card" style="border-left: 3px solid var(--orange);">
+      <h3>💰 加密钱包</h3>
+      <div class="sub">管资产像管零钱一样简单</div>
+      <div class="ex">
+        <div class="ask">「查一下我的余额」</div>
+        <div class="result">→ SOL / USDC / AMIKO 一目了然</div>
+      </div>
+      <div class="ex">
+        <div class="ask">「把 0.5 SOL 换成 USDC」</div>
+        <div class="result">→ 自动走 Jupiter 兑换，报价 → 确认 → 到账</div>
+      </div>
+      <div class="ex">
+        <div class="ask">「把 USDC 从 Solana 跨到 Base 链」</div>
+        <div class="result">→ 走 Across 跨链桥，自动完成</div>
+      </div>
+    </div>
+
+    <!-- AI 分身 -->
+    <div class="cap-card" style="border-left: 3px solid var(--blue);">
+      <h3>🤖 AI 分身 & 自动化</h3>
+      <div class="sub">你的数字人格，设一次就自己跑</div>
+      <div class="ex">
+        <div class="ask">「帮我创建一张新的身份卡」</div>
+        <div class="result">→ 工作/娱乐/私密 三张身份，自由切换</div>
+      </div>
+      <div class="ex">
+        <div class="ask">「别的 AI 对我存了什么记忆？查一下」</div>
+        <div class="result">→ 跨 Agent 记忆查询，看清你的数字档案</div>
+      </div>
+      <div class="ex">
+        <div class="ask">「每天早上 9 点自动给我发 AI 行业简报」</div>
+        <div class="result">→ 设定一次，每天自动搜索、整理、推送</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 4: Detailed Comparison -->
+<section>
+  <h2>🆚 完整对比：Lark CLI vs Amiko CLI</h2>
+  <p class="sec-desc">两个 CLI 都能让 AI 替你操作平台，但能力重心完全不同</p>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+    <table class="full-table">
+      <thead>
+        <tr><th style="width:38%;">能力</th><th style="width:31%;">Lark CLI</th><th style="width:31%;">Amiko CLI</th></tr>
+      </thead>
+      <tbody>
+        <tr class="divider-row"><td colspan="3">💬 消息与通讯</td></tr>
+        <tr><td>收发消息</td><td>✅</td><td>✅</td></tr>
+        <tr><td>管理群组</td><td>✅ 加人 / 踢人 / 改名</td><td>✅ 建群 / 加人 / 总结群聊</td></tr>
+        <tr><td>社交网络</td><td>❌ 无社交层</td><td>✅ 好友 / Feed / 点赞 / 评论</td></tr>
+
+        <tr class="divider-row"><td colspan="3">🎨 内容与创作</td></tr>
+        <tr><td>文档 / Wiki / 表格</td><td>✅ Docs / Sheets / Base</td><td>❌</td></tr>
+        <tr><td>AI 生成图片</td><td>❌</td><td>✅ 一句话生成，指什么画什么</td></tr>
+        <tr><td>AI 生成音乐</td><td>❌</td><td>✅ 指定风格、时长，自动作曲</td></tr>
+        <tr><td>AI 生成视频</td><td>❌</td><td>✅</td></tr>
+        <tr><td>文字转语音 / 语音转文字</td><td>❌</td><td>✅ Marketplace 服务</td></tr>
+        <tr><td>云盘 / 文件管理</td><td>✅ 企业云盘</td><td>✅ 私人 Drive</td></tr>
+
+        <tr class="divider-row"><td colspan="3">💰 资产与钱包</td></tr>
+        <tr><td>加密钱包</td><td>❌</td><td>✅ SOL / Base 钱包，兑换转账</td></tr>
+        <tr><td>跨链桥</td><td>❌</td><td>✅ USDC 跨链（Across）</td></tr>
+
+        <tr class="divider-row"><td colspan="3">📅 办公与效率</td></tr>
+        <tr><td>日历 / 会议</td><td>✅ 日程 + 视频会议</td><td>❌</td></tr>
+        <tr><td>审批 / 任务 / OKR</td><td>✅</td><td>❌</td></tr>
+        <tr><td>邮箱</td><td>✅</td><td>❌</td></tr>
+        <tr><td>自动化 / 定时任务</td><td>⚠ 需外部触发</td><td>✅ 内置 Cron，设好就自己跑</td></tr>
+
+        <tr class="divider-row"><td colspan="3">🤖 AI 原生能力</td></tr>
+        <tr><td>AI 分身管理</td><td>❌</td><td>✅ 头像 / 声音 / 身份卡</td></tr>
+        <tr><td>跨 Agent 记忆</td><td>❌</td><td>✅ 查其他 AI 对你的了解</td></tr>
+        <tr><td>平台外搜索</td><td>❌</td><td>✅ X / 商品搜索等 Marketplace</td></tr>
+
+        <tr class="divider-row"><td colspan="3">🔑 架构差异</td></tr>
+        <tr><td>跨企业访问</td><td>⚠ 租户隔离，无法跨企业</td><td>✅ 无墙，全局可达</td></tr>
+        <tr><td>认证方式</td><td>⚠ 需手动配 App ID + OAuth</td><td>✅ 自动认证，开箱即用</td></tr>
+        <tr><td>费用</td><td>✅ 免费</td><td>⚠ 基础免费，创作按量计费</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:28px;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;border-left:3px solid var(--blue);">
+      <strong style="color:var(--blue);">🏢 Lark CLI 擅长</strong>
+      <p style="color:var(--muted);font-size:0.88rem;margin-top:6px;">管组织的日常 — 写文档、排会议、走审批。所有「一群人一起做事」的场景。</p>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;border-left:3px solid var(--accent);">
+      <strong style="color:var(--accent);">🌐 Amiko CLI 擅长</strong>
+      <p style="color:var(--muted);font-size:0.88rem;margin-top:6px;">管自己的数字生活 — 加好友、审群聊、做音乐、管钱包、建分身、设自动化。所有「一个人掌控自己」的场景。</p>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:24px;color:var(--muted);font-size:0.95rem;">
+    💡 <strong>Lark 管「事」，Amiko 管「我」。不是一个赛道，可以同时用。</strong>
+  </div>
+</section>
+
+<!-- Section 5: Unique Positioning -->
+<section>
+  <h2>🌟 Amiko 到底是什么？</h2>
+  <p class="sec-desc">三个类比，帮你快速定位</p>
+
+  <div class="value-grid">
+    <div class="value-card">
+      <div class="emoji">📱</div>
+      <h4>不是又一个聊天 App</h4>
+      <p>微信、WhatsApp、Telegram 已经够多了。Amiko 的核心不是聊天——是让 AI 替你做事。</p>
+    </div>
+    <div class="value-card core">
+      <div class="emoji">🧬</div>
+      <h4>你的数字人格操作系统</h4>
+      <p>Amiko 让你的 AI 分身拥有好友、记忆、钱包、创作能力——它是你数字生活的「家」。</p>
+    </div>
+    <div class="value-card">
+      <div class="emoji">🔐</div>
+      <h4>不是银行也不是交易所</h4>
+      <p>虽然内嵌加密钱包，但核心不是理财——是让你的 AI 分身能拥有和支配自己的资产。</p>
+    </div>
+  </div>
+
+  <div class="quote">
+    <div class="line">
+      当你的 <span class="pink">AI 分身</span> 需要一个家 ——<br>
+      一个能记住你是谁、你有什么、你能做什么的地方 ——<br>
+      那就是 <span class="pink">Amiko</span>。
+    </div>
+  </div>
+</section>
+
+<!-- Section 6: Why CLI -->
+<section>
+  <h2>⚡ 为什么要用 CLI 而不是 App？</h2>
+  <p class="sec-desc">三个比你拍脑袋想到的更实在的理由</p>
+
+  <div class="analogy">
+    <div class="analogy-card">
+      <div class="emoji">⏱</div>
+      <h3>效率：秒杀鼠标</h3>
+      <p>「查余额」→ 1 句话 vs 打开 App → 点钱包 → 等加载 → 翻页面。<br>CLI 把<strong>分钟级操作变成秒级</strong>。</p>
+    </div>
+    <div class="analogy-card">
+      <div class="emoji">🔁</div>
+      <h3>自动化：设一次就不用管</h3>
+      <p>「每天早上 9 点给我发 AI 行业简报」—— 说一次，你的 AI 每天自动用 CLI 搜索、整理、定时发给你，<strong>不需要闹钟不需要手动触发</strong>。</p>
+    </div>
+    <div class="analogy-card">
+      <div class="emoji">🧩</div>
+      <h3>可组合：多个能力串联</h3>
+      <p>「在 X 上搜热门话题 → 写一篇分析 → 生成配图 → 发到我的群」—— CLI 让 AI 把<strong>搜索+创作+分发串成一条自动化流水线</strong>。</p>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  Amiko CLI — 不是让你学编程，是让 AI 替你编程。<br>
+  <a href="https://platform.heyamiko.com" style="color:var(--accent);">进入 Amiko 平台 →</a>
+</footer>
+
+</body>
+</html>
